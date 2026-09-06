@@ -21,7 +21,7 @@
 Платформа: [picoCTF Practice](https://play.picoctf.org/practice).  
 Це рекомендований маршрут для мене як тренера: він охоплює Git, кодування, Forensics і Web та займає орієнтовно 2–3 години разом із нотатками.
 
-### [ ] 1. First Find
+### [ x ] 1. First Find
 
 - Напрям: General Skills / Linux
 - Орієнтир: навігація файлами, `find`, `cat`
@@ -31,16 +31,21 @@
 **Коментар після задачі**
 
 ```text
-Статус:
-Час:
-Що дали:
-Що перевірив:
+Статус: DONE
+Час: 5хв
+Що дали: посилання на архів
+Що перевірив: скачати, знайти файл, прочитати файл
 Ключова команда / ідея:
-Що запам'ятав:
+wget https://artifacts.picoctf.net/c/502/files.zip
+unzip files.zip
+find files -name "uber-secret.txt"
+cat files/adequate_books/more_books/.secret/deeper_secrets/deepest_secrets/uber-secret.txt
+
+Що запам'ятав: флаг в тексті файлу
 Питання або коментар:
 ```
 
-### [ ] 2. MY GIT
+### [ Х ] 2. MY GIT
 
 - Напрям: General Skills / Git
 - Орієнтир: README, локальні `git config user.name` і `user.email`, commit metadata
@@ -50,15 +55,28 @@
 **Коментар після задачі**
 
 ```text
-Статус:
-Час:
-Яку вимогу знайшов у README:
+Статус: DONE
+Час: 5хв
+Яку вимогу знайшов у README: 
+Only flag.txt pushed by ```root:root@picoctf``` will be updated with the flag.
+
 Які Git-команди використав:
-Security-висновок:
+git config user.name "root"
+git config user.email "root@picoctf"
+touch flag.txt
+git add .
+git commit -m "added flag"
+git push
+
+Security-висновок: 
+user.name та user.email — це лише metadata коміту, які кожен може локально змінити.
+Вони не є автентифікацією і не доводять, що коміт справді створив root.
+Сервер задачі помилково довіряв цим полям.
+
 Питання або коментар:
 ```
 
-### [ ] 3. The Numbers
+### [ X ] 3. The Numbers
 
 - Напрям: Crypto / Encoding
 - Орієнтир: перетворення чисел на символи
@@ -70,13 +88,15 @@ Security-висновок:
 ```text
 Статус:
 Час:
-На що були схожі дані:
-Як перевірив гіпотезу:
+На що були схожі дані: числа схожі на номери літер в алфавіті та формат відповіді для флагу qwert{qwert}
+Як перевірив гіпотезу: знайшов англійський алфавіт та почав звіряти
 Ключова ідея:
+picoctf{thenumbersmason}
+
 Питання або коментар:
 ```
 
-### [ ] 4. information
+### [ X ] 4. information
 
 - Напрям: Forensics
 - Орієнтир: metadata, `exiftool`
@@ -86,15 +106,20 @@ Security-висновок:
 **Коментар після задачі**
 
 ```text
-Статус:
+Статус: DONE
 Час:
-Тип файла:
-Що показав exiftool:
-Ключова знахідка:
+Тип файла: cat.jpg
+Що показав exiftool: 
+exiftool cat.jpg
+License: cGljb0NURnt0aGVfbTN0YWRhdGFfMXNfbW9kaWZpZWR9 - схожий на base64
+echo "cGljb0NURnt0aGVfbTN0YWRhdGFfMXNfbW9kaWZpZWR9" | base64 -d
+picoCTF{the_m3tadata_1s_modified}
+
+Ключова знахідка: закодований license
 Питання або коментар:
 ```
 
-### [ ] 5. Glory of the Garden
+### [ X ] 5. Glory of the Garden
 
 - Напрям: Forensics
 - Орієнтир: `strings`, пошук читабельних даних у файлі
@@ -104,11 +129,18 @@ Security-висновок:
 **Коментар після задачі**
 
 ```text
-Статус:
+Статус: DONE
 Час:
-Які перші перевірки зробив:
-Яка команда дала зачіпку:
+Які перші перевірки зробив: file, strings
+Яка команда дала зачіпку: strings 
 Де саме були дані:
+У текстових байтах усередині JPEG-файлу / доданих до нього даних,
+а не в metadata і не у видимому зображенні.
+
+Ключова ідея:
+Картинка — це теж файл із сирими байтами. Команда strings витягує
+послідовності читабельних символів, серед яких може бути flag.
+
 Питання або коментар:
 ```
 
