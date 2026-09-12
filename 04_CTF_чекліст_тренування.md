@@ -212,14 +212,196 @@ Cookie має містити лише випадковий session token, а с�
 
 ### Додаткові picoCTF — лише якщо є час
 
-| Задача | Напрям | Що тренує | Статус | Коментар |
-|---|---|---|---|---|
-| Static ain't always noise | Forensics | `strings` у бінарному файлі | [ ] | |
-| Matryoshka doll | Forensics | вкладені файли, `file`, архіви | [ ] | |
-| Scavenger Hunt | Web | source, JavaScript, `robots.txt` | [ ] | |
-| dont-use-client-side | Web | client-side перевірки | [ ] | |
-| Time Machine | Git | `git log`, `git show`, історія commit | [ ] | |
-| Commitment Issues | Git | commit history і пошук секретів | [ ] | |
+| Задача | Напрям | Що тренує | Статус | Коментар                                                                              |
+|---|---|---|--------|---------------------------------------------------------------------------------------|
+| Static ain't always noise | Forensics | `strings` у бінарному файлі | DONE   |  |
+| Matryoshka doll | Forensics | вкладені файли, `file`, архіви | DONE   |                                                                                       |
+| Scavenger Hunt | Web | source, JavaScript, `robots.txt` | DONE   |                                                                                       |
+| dont-use-client-side | Web | client-side перевірки | DONE   |                                                                                       |
+| Time Machine | Git | `git log`, `git show`, історія commit | [ ]    |                                                                                       |
+| Commitment Issues | Git | commit history і пошук секретів | [ ]    |                                                                                       |
+
+
+# Коментарі до вирішення
+## Static ain't always noise
+```plantuml
+wget <URL_файла_static>
+# Завантажує binary-файл.
+
+strings static
+# Витягує з binary послідовності читабельних символів.
+# У задачі ця команда одразу показала flag.
+
+Роль ltdis.sh
+bash ltdis.sh static
+# Автоматично створює:
+# static.ltdis.x86_64.txt — assembly-код програми;
+# static.ltdis.strings.txt — читабельні рядки та їхні позиції у файлі.
+
+Ключовий висновок
+Перед тим як запускати або складно аналізувати unknown binary, спершу перевір:
+file filename       # фактичний тип та архітектура файла
+strings filename    # читабельний текст, URL, паролі, flag
+```
+
+## Matryoshka doll
+```aiexclude
+file dolls.jpg
+# Показує реальний тип файла. Зображення може містити також додаткові дані.
+
+unzip -l dolls.jpg
+# -l (list) показує вміст ZIP-архіву без розпакування.
+# Навіть якщо файл має розширення .jpg, unzip може знайти ZIP-дані всередині.
+
+mkdir step1
+unzip dolls.jpg -d step1
+# Розпаковує прихований архів у папку step1.
+# -d задає папку, куди витягувати файли.
+
+find step1 -type f
+# Показує всі звичайні файли, які були витягнуті.
+
+# Після цього всередині був наступний файл — 2_c.jpg. Для нього потрібно повторити той самий алгоритм:
+
+перевірити файл → знайти/переглянути архів → розпакувати →
+знайти наступний вкладений файл
+
+# У задачі цей цикл повторювався кілька разів, як у матрьошці, доки не з’явився фінальний файл із flag.
+```
+
+## Scavenger Hunt
+```plantuml
+Послідовні підказки
+
+html
+<!-- Here's the first part of the flag: picoCTF{t -->
+
+ccs
+/* CSS makes the page look nice, and yes, it also has part of the flag. Here's part 2:  */
+
+js
+/* How can I keep Google from indexing my website? */
+
+
+http://wily-courier.picoctf.net:49986/robots.txt
+User-agent: *
+Disallow: /index.html
+# Part 3: 
+# I think this is an apache server... can you Access the next flag?
+
+
+http://wily-courier.picoctf.net:49986/.htaccess
+# Part 4: 
+# I love making websites on my Mac, I can Store a lot of information there.
+
+http://wily-courier.picoctf.net:49986/.DS_Store
+Congrats! You've completed the scavenger hunt! Part 5: }
+
+```
+#### Що означають ці файли
+
+| Файл | Призначення | Ризик |
+|---|---|---|
+| `robots.txt` | Просить пошуковики не індексувати певні сторінки | Це не захист: файл і його шляхи доступні кожному. |
+| `.htaccess` | Локальна конфігурація Apache | Може розкрити правила доступу або внутрішні шляхи. |
+| `.DS_Store` | Metadata папки, створені macOS Finder | Може розкрити структуру директорій і назви файлів на сервері. |
+
+#### Ключовий security-висновок
+
+Не можна приховувати конфіденційні сторінки лише через `robots.txt` або «неочевидну» URL-адресу. Дані треба реально захищати авторизацією, а службові й тимчасові файли не мають потрапляти у публічну вебдиректорію.
+
+#### Що запам’ятати для Web-задач
+
+```text
+Видима сторінка — не весь сайт.
+Перевіряй HTML source, CSS, JavaScript, HTTP-заголовки
+та службові файли, якщо на них є обґрунтована підказка.
+```
+
+## dont-use-client-side
+**Ідея:** логіка перевірки пароля виконувалася в браузері, тому її код і правильний пароль були доступні кожному, хто відкрив HTML/JavaScript сторінки.
+
+### Що було в коді
+
+Функція `verify()` брала значення з поля введення:
+
+```js
+checkpass = document.getElementById("pass").value;
+```
+
+Потім вона порівнювала окремі частини введеного рядка:
+
+```js
+split = 4;
+checkpass.substring(0, split) == 'pico'
+checkpass.substring(split, split*2) == 'CTF{'
+checkpass.substring(split*2, split*3) == 'no_c'
+// ...
+```
+
+`substring(початок, кінець)` повертає частину рядка за вказаними позиціями.
+Тут `split = 4`, тому пароль був поділений на блоки по 4 символи.
+
+> **Чому використано `*`, а не `+`?** У JavaScript `*` — це множення чисел. Воно обчислює межі блоку: `split*2` = `4*2` = `8`, а `split*7` = `28`. Символ `+` тут був би додаванням (`4+2` = `6`) або склеюванням рядків — і не давав би потрібних позицій `0, 4, 8, 12, ...`.
+
+### Послідовність дій
+
+1. Відкрити вихідний код сторінки або DevTools → **Sources**.
+2. Знайти JavaScript-функцію, яка перевіряє пароль.
+3. Побачити, що кожна умова порівнює блок із чотирьох символів.
+4. Розмістити блоки за їхньою позицією, яку задає `substring`:
+
+   | Позиція | Вираз | Частина |
+      |---:|---|---|
+   | 0–3 | `substring(0, split)` | `pico` |
+   | 4–7 | `substring(split, split*2)` | `CTF{` |
+   | 8–11 | `substring(split*2, split*3)` | `no_c` |
+   | 12–15 | `substring(split*3, split*4)` | `lien` |
+   | 16–19 | `substring(split*4, split*5)` | `ts_p` |
+   | 20–23 | `substring(split*5, split*6)` | `lz_2` |
+   | 24–27 | `substring(split*6, split*7)` | `eb02` |
+   | 28–31 | `substring(split*7, split*8)` | `b45}` |
+
+5. Зібрати блоки в правильному порядку.
+
+### Чому це небезпечно в реальному сервісі
+
+JavaScript у браузері завантажується на пристрій користувача. Його можна:
+
+- переглянути через DevTools або View Source;
+- змінити локально;
+- не запускати взагалі та надіслати запит до сервера вручну.
+
+Тому пароль, секретний ключ, перевірка ролі користувача або доступ до адмін-функцій не можуть бути захищені лише клієнтською перевіркою.
+
+### Як робити правильно
+
+Клієнтська перевірка корисна для зручності, наприклад щоб одразу показати помилку у формі. Але сервер має **повторно і незалежно** перевіряти:
+
+```text
+хто користувач → чи коректні його дані → чи має він право на цю дію
+```
+
+Секрети й правила доступу мають зберігатися та перевірятися на сервері, а не у видимому JavaScript-коді.
+
+### Ключовий висновок
+
+```text
+Never trust the client.
+Будь-які дані та код на стороні користувача вважай такими,
+які користувач може прочитати, змінити або обійти.
+```
+
+## Time Machine
+```plantuml
+
+```
+
+## Commitment Issues
+```aiexclude
+
+```
+
 
 ---
 
