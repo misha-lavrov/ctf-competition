@@ -29,6 +29,28 @@
 - `emails.zip` — 10 фішингових листів (`.eml`)
 - `emails/` — та сама розпакована папка (порожня до розпакування архіву)
 - `memdump.raw` — дамп оперативної пам'яті Windows-машини (ELF core dump формат, типовий для QEMU `dump-guest-memory`)
+- ⚠️ **`network_dump.pcap`** — за скріншотом файлового менеджера цей файл, схоже, таки існував (див. TODO нижче), хоча раніше вважалось, що PCAP серед наданих файлів не було. TODO: підтвердити й отримати — це прямо стосується непідтвердженої підзадачі 2 і незавершених 4–5.
+
+Зі скріншота файлового менеджера (Dolphin, `Downloads/memory_analysis/emails`) відомі всі 10 назв листів — типові теми ділового фішингу (BEC-style, кожен ніби від іншого "партнера"/сервісу):
+
+```text
+Boost Your Sales with Expert Marketing...ies.eml
+Build a High-Performing Team with Tale...orge.eml
+Enhancing Employee Well-Being wit...ions.eml
+Expanding Your Market Reach with GlobalTr...Hub.eml
+Revolutionize Your Operations with AI-Driven So...ions.eml
+Strategic Partnership Opportunit...rgy.eml
+Streamline Your Operations with Custom S...ons.eml
+Sustainable Packaging Solutions...ness.eml
+Transform Your IT Infrastructure with CloudNexa.eml
+Unlock Growth with Tailored Financing Solutions.eml
+```
+
+> Назви обрізані на скріншоті (вузька колонка файлового менеджера) — TODO:
+> звірити повні назви, коли `emails.zip` буде в `files/05-malicious-document/`.
+> Лист із шкідливим `.docx`-вкладенням (`Financely Business Proposal.docx`,
+> див. `02-solution.md`) серед цих 10 імен файлів напряму не видно — імовірно,
+> це вкладення одного з листів вище, а не назва самого `.eml`.
 
 ## Підзадачі
 
@@ -55,6 +77,16 @@
 > Flag format: `UR{full\path\to\the\file}`
 
 **Суть:** визначити повний шлях до файлу на диску жертви, який був вкрадений (ексфільтрований) через PowerShell-скрипт.
+
+**Відомі невдалі спроби** (зі скріншотів платформи, обидві ❌):
+- Спроба 2/5: `UR{c:\users\public\vip4ymtqln}`
+- Спроба 3/5: `UR{c:\users\public\vip4ymtqln\dzbiz1hrmj.rar}`
+
+Обидві в патерні `C:\Users\Public\<щось>\...` — розумна здогадка (Public — типова
+тека для стейджингу файлів шкідливим ПЗ, доступна всім користувачам), але
+конкретні назви теки/файлу не підтвердились. Якщо продовжуєш цю підзадачу —
+не повторюй ці два варіанти, спробуй знайти реальну назву в pslist/cmdline
+дампу пам'яті, а не вгадувати.
 
 ### 5. Find the content of the stolen file — 100 балів
 > Find the content of the stolen file

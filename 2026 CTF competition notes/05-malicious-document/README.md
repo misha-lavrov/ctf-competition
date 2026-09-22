@@ -6,7 +6,8 @@ remote template injection → VBA macro → PowerShell → data exfiltration.
 **Тип:** Phishing & Social Engineering + Malware Analysis + Memory Forensics
 **Інструменти:** oletools (`olevba`), volatility3, unzip (OOXML як ZIP)
 **Статус:** ⚠️ підзадачі 1–3 вирішено (100/100), підзадачі 4–5 не завершені —
-дамп памʼяті виявився обрізаним (~2.1 ГБ замість очікуваних ~10.5 ГБ). Детальний
+дамп памʼяті виявився обрізаним (~2.1 ГБ замість очікуваних ~10.5 ГБ), плюс
+2 підтверджено невірні спроби на підзадачі 4 (див. нижче). Детальний
 розбір причини і план дороблення — у `02-solution.md`.
 
 ## Файли
@@ -26,3 +27,10 @@ remote template injection → VBA macro → PowerShell → data exfiltration.
 - [ ] Знайти дочірній `powershell.exe`, запущений `WINWORD.EXE` (PID `7140`), і його командний рядок
 - [ ] Розкодувати `-EncodedCommand`, якщо командний рядок закодований у base64/UTF-16LE
 - [ ] Підтвердити підзадачу 2 (`TCP connections`) через `windows.netscan`, а не лише за словами команди
+- [ ] **Знайти `network_dump.pcap`** — скріншот файлового менеджера показує цей
+      файл поруч із `memdump.raw`, хоча раніше вважалось, що PCAP серед наданих
+      файлів не було. Якщо він реально існує — це може напряму дати підзадачі
+      2 (TCP-з'єднання) і, можливо, 4–5 (ексфільтрація), без потреби чекати
+      повний memory dump.
+- [ ] Підзадача 4: НЕ пробувати повторно `UR{c:\users\public\vip4ymtqln}` і
+      `UR{c:\users\public\vip4ymtqln\dzbiz1hrmj.rar}` — обидва вже підтверджено невірні (див. `01-task.md`)
